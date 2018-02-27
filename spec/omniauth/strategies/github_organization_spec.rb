@@ -1,31 +1,33 @@
 require 'spec_helper'
 
-describe OmniAuth::Strategies::GitHub do
-  let(:access_token) { instance_double('AccessToken', :options => {}) }
+describe OmniAuth::Strategies::GitHubOrganization do
+  let(:access_token) { instance_double('AccessToken', options: {}) }
   let(:parsed_response) { instance_double('ParsedResponse') }
-  let(:response) { instance_double('Response', :parsed => parsed_response) }
+  let(:response) { instance_double('Response', parsed: parsed_response) }
 
   let(:enterprise_site)          { 'https://some.other.site.com/api/v3' }
   let(:enterprise_authorize_url) { 'https://some.other.site.com/login/oauth/authorize' }
   let(:enterprise_token_url)     { 'https://some.other.site.com/login/oauth/access_token' }
   let(:enterprise) do
-    OmniAuth::Strategies::GitHub.new('GITHUB_KEY', 'GITHUB_SECRET',
+    OmniAuth::Strategies::GitHubOrganization.new('GITHUB_KEY', 'GITHUB_SECRET',
         {
-            :client_options => {
-                :site => enterprise_site,
-                :authorize_url => enterprise_authorize_url,
-                :token_url => enterprise_token_url
-            }
+            client_options: {
+                site: enterprise_site,
+                authorize_url: enterprise_authorize_url,
+                token_url: enterprise_token_url
+            },
+            organization: 'test'
         }
     )
   end
 
   subject do
-    OmniAuth::Strategies::GitHub.new({})
+    OmniAuth::Strategies::GitHubOrganization.new({},scope: 'read:org')
   end
 
   before(:each) do
     allow(subject).to receive(:access_token).and_return(access_token)
+    allow(subject).to receive(:organizations).and_return(%w[example test])
   end
 
   context 'client options' do
@@ -41,6 +43,10 @@ describe OmniAuth::Strategies::GitHub do
       expect(subject.options.client_options.token_url).to eq('https://github.com/login/oauth/access_token')
     end
 
+    it 'should have correct organization name' do
+      expect(subject.options.organization).to eq('example')
+    end
+
     describe 'should be overrideable' do
       it 'for site' do
         expect(enterprise.options.client_options.site).to eq(enterprise_site)
@@ -53,12 +59,16 @@ describe OmniAuth::Strategies::GitHub do
       it 'for token url' do
         expect(enterprise.options.client_options.token_url).to eq(enterprise_token_url)
       end
+
+      it 'for organization name' do
+        expect(enterprise.options.organization).to eq('test')
+      end
     end
   end
 
   context '#email_access_allowed?' do
     it 'should not allow email if scope is nil' do
-      expect(subject.options['scope']).to be_nil
+      expect(subject.options['scope']).to eq('read:org')
       expect(subject).to_not be_email_access_allowed
     end
 
@@ -126,7 +136,7 @@ describe OmniAuth::Strategies::GitHub do
 
   context '#emails' do
     it 'should use relative paths' do
-      expect(access_token).to receive(:get).with('user/emails', :headers => {
+      expect(access_token).to receive(:get).with('user/emails', headers: {
         'Accept' => 'application/vnd.github.v3'
       }).and_return(response)
 
@@ -155,7 +165,14 @@ describe OmniAuth::Strategies::GitHub do
       allow(subject).to receive(:full_host).and_return('https://example.com')
       allow(subject).to receive(:script_name).and_return('/sub_uri')
 
-      expect(subject.callback_url).to eq('https://example.com/sub_uri/auth/github/callback')
+      expect(subject.callback_url).to eq('https://example.com/sub_uri/auth/github_organization/callback')
     end
   end
+
+  it 'is should return error if organization not match' do
+    allow(subject).to receive(:organizations).and_return(%w[not_match])
+    expect(subject).to receive(:fail!).with(:user_denied, anything)
+    subject.callback_phase
+  end
+
 end

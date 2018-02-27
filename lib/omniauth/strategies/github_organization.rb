@@ -2,11 +2,15 @@ require 'omniauth-oauth2'
 
 module OmniAuth
   module Strategies
-    class GitHub < OmniAuth::Strategies::OAuth2
+    class GitHubOrganization < OmniAuth::Strategies::OAuth2
+      option :name, 'github_organization'
+      option :scope, 'user,read:org'
+      option :organization, 'example'
+      # rubocop:disable Style/BracesAroundHashParameters
       option :client_options, {
-        :site => 'https://api.github.com',
-        :authorize_url => 'https://github.com/login/oauth/authorize',
-        :token_url => 'https://github.com/login/oauth/access_token'
+        site: 'https://api.github.com',
+        authorize_url: 'https://github.com/login/oauth/authorize',
+        token_url: 'https://github.com/login/oauth/access_token'
       }
 
       def request_phase
@@ -23,6 +27,17 @@ module OmniAuth
         end
       end
 
+      def callback_phase
+        return fail!(:user_denied, CallbackError.new(:user_denied, options['organization'])) unless organizations.include? options['organization']
+        super
+      end
+
+      def organizations
+        access_token.options[:mode] = :query
+        organizations = access_token.get('user/orgs', headers: { 'Accept' => 'application/vnd.github.v3' }).parsed
+        organizations.map { |x| x['login'] }
+      end
+
       uid { raw_info['id'].to_s }
 
       info do
@@ -31,6 +46,7 @@ module OmniAuth
           'email' => email,
           'name' => raw_info['name'],
           'image' => raw_info['avatar_url'],
+          'organizations' => organizations,
           'urls' => {
             'GitHub' => raw_info['html_url'],
             'Blog' => raw_info['blog'],
@@ -39,7 +55,7 @@ module OmniAuth
       end
 
       extra do
-        {:raw_info => raw_info, :all_emails => emails}
+        { raw_info: raw_info, all_emails: emails }
       end
 
       def raw_info
@@ -48,11 +64,11 @@ module OmniAuth
       end
 
       def email
-        (email_access_allowed?) ? primary_email : raw_info['email']
+        email_access_allowed? ? primary_email : raw_info['email']
       end
 
       def primary_email
-        primary = emails.find{ |i| i['primary'] && i['verified'] }
+        primary = emails.find { |i| i['primary'] && i['verified'] }
         primary && primary['email'] || nil
       end
 
@@ -60,12 +76,12 @@ module OmniAuth
       def emails
         return [] unless email_access_allowed?
         access_token.options[:mode] = :query
-        @emails ||= access_token.get('user/emails', :headers => { 'Accept' => 'application/vnd.github.v3' }).parsed
+        @emails ||= access_token.get('user/emails', headers: { 'Accept' => 'application/vnd.github.v3' }).parsed
       end
 
       def email_access_allowed?
         return false unless options['scope']
-        email_scopes = ['user', 'user:email']
+        email_scopes = %w[user user:email]
         scopes = options['scope'].split(',')
         (scopes & email_scopes).any?
       end
@@ -77,4 +93,4 @@ module OmniAuth
   end
 end
 
-OmniAuth.config.add_camelization 'github', 'GitHub'
+OmniAuth.config.add_camelization 'github_organization', 'GitHubOrganization'

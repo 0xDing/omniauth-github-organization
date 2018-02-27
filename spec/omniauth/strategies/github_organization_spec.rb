@@ -26,8 +26,13 @@ describe OmniAuth::Strategies::GitHubOrganization do
   end
 
   before(:each) do
+    OmniAuth.config.test_mode = true
     allow(subject).to receive(:access_token).and_return(access_token)
     allow(subject).to receive(:organizations).and_return(%w[example test])
+  end
+
+  after do
+    OmniAuth.config.test_mode = false
   end
 
   context 'client options' do
@@ -167,12 +172,6 @@ describe OmniAuth::Strategies::GitHubOrganization do
 
       expect(subject.callback_url).to eq('https://example.com/sub_uri/auth/github_organization/callback')
     end
-  end
-
-  it 'is should return error if organization not match' do
-    allow(subject).to receive(:organizations).and_return(%w[not_match])
-    expect(subject).to receive(:fail!).with(:user_denied, anything)
-    subject.callback_phase
   end
 
 end

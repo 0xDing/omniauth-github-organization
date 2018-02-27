@@ -28,8 +28,8 @@ module OmniAuth
       end
 
       def callback_phase
-        return fail!(:user_denied, CallbackError.new(:user_denied, options['organization'])) unless organizations.include? options['organization']
         super
+        return fail!(:user_denied, CallbackError.new(:user_denied, options['organization'])) unless organizations.include? options['organization']
       end
 
       def organizations

@@ -15,8 +15,7 @@ describe OmniAuth::Strategies::GitHubOrganization do
                 site: enterprise_site,
                 authorize_url: enterprise_authorize_url,
                 token_url: enterprise_token_url
-            },
-            organization: 'test'
+            }
         }
     )
   end
@@ -26,9 +25,12 @@ describe OmniAuth::Strategies::GitHubOrganization do
   end
 
   before(:each) do
+    OmniAuth.config.test_mode = true
     allow(subject).to receive(:access_token).and_return(access_token)
     allow(subject).to receive(:organizations).and_return(%w[example test])
   end
+
+
 
   context 'client options' do
     it 'should have correct site' do
@@ -41,10 +43,6 @@ describe OmniAuth::Strategies::GitHubOrganization do
 
     it 'should have correct token url' do
       expect(subject.options.client_options.token_url).to eq('https://github.com/login/oauth/access_token')
-    end
-
-    it 'should have correct organization name' do
-      expect(subject.options.organization).to eq('example')
     end
 
     describe 'should be overrideable' do
@@ -60,9 +58,6 @@ describe OmniAuth::Strategies::GitHubOrganization do
         expect(enterprise.options.client_options.token_url).to eq(enterprise_token_url)
       end
 
-      it 'for organization name' do
-        expect(enterprise.options.organization).to eq('test')
-      end
     end
   end
 
@@ -167,12 +162,6 @@ describe OmniAuth::Strategies::GitHubOrganization do
 
       expect(subject.callback_url).to eq('https://example.com/sub_uri/auth/github_organization/callback')
     end
-  end
-
-  it 'is should return error if organization not match' do
-    allow(subject).to receive(:organizations).and_return(%w[not_match])
-    expect(subject).to receive(:fail!).with(:user_denied, anything)
-    subject.callback_phase
   end
 
 end

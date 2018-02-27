@@ -5,7 +5,7 @@ module OmniAuth
     class GitHubOrganization < OmniAuth::Strategies::OAuth2
       option :name, 'github_organization'
       option :scope, 'user,read:org'
-      option :organization, 'example'
+
       # rubocop:disable Style/BracesAroundHashParameters
       option :client_options, {
         site: 'https://api.github.com',
@@ -27,15 +27,11 @@ module OmniAuth
         end
       end
 
-      def callback_phase
-        super
-        return fail!(:user_denied, CallbackError.new(:user_denied, options['organization'])) unless organizations.include? options['organization']
-      end
-
       def organizations
         access_token.options[:mode] = :query
-        organizations = access_token.get('user/orgs', headers: { 'Accept' => 'application/vnd.github.v3' }).parsed
-        organizations.map { |x| x['login'] }
+        organizations = access_token
+                            .get('user/orgs', headers: { 'Accept' => 'application/vnd.github.v3' })
+                            .parsed.map { |x| x['login'] }
       end
 
       uid { raw_info['id'].to_s }
@@ -46,7 +42,6 @@ module OmniAuth
           'email' => email,
           'name' => raw_info['name'],
           'image' => raw_info['avatar_url'],
-          'organizations' => organizations,
           'urls' => {
             'GitHub' => raw_info['html_url'],
             'Blog' => raw_info['blog'],
@@ -55,7 +50,7 @@ module OmniAuth
       end
 
       extra do
-        { raw_info: raw_info, all_emails: emails }
+        { raw_info: raw_info, all_emails: emails, organizations: organizations }
       end
 
       def raw_info

@@ -15,8 +15,7 @@ describe OmniAuth::Strategies::GitHubOrganization do
                 site: enterprise_site,
                 authorize_url: enterprise_authorize_url,
                 token_url: enterprise_token_url
-            },
-            organization: 'test'
+            }
         }
     )
   end
@@ -46,10 +45,6 @@ describe OmniAuth::Strategies::GitHubOrganization do
       expect(subject.options.client_options.token_url).to eq('https://github.com/login/oauth/access_token')
     end
 
-    it 'should have correct organization name' do
-      expect(subject.options.organization).to eq('example')
-    end
-
     describe 'should be overrideable' do
       it 'for site' do
         expect(enterprise.options.client_options.site).to eq(enterprise_site)
@@ -63,9 +58,6 @@ describe OmniAuth::Strategies::GitHubOrganization do
         expect(enterprise.options.client_options.token_url).to eq(enterprise_token_url)
       end
 
-      it 'for organization name' do
-        expect(enterprise.options.organization).to eq('test')
-      end
     end
   end
 

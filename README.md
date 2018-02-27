@@ -9,7 +9,7 @@ on the [GitHub Applications Page](https://github.com/settings/applications).
 
 ```ruby
 use OmniAuth::Builder do
-  provider :github_organization, ENV['GITHUB_KEY'], ENV['GITHUB_SECRET'], organization: ENV['GITHUB_ORGANIZATION_NAME']
+  provider :github_organization, ENV['GITHUB_KEY'], ENV['GITHUB_SECRET']
 end
 ```
 
@@ -19,7 +19,7 @@ GitHub API v3 lets you set scopes to provide granular access to different types 
 
 ```ruby
 use OmniAuth::Builder do
-  provider :github, ENV['GITHUB_KEY'], ENV['GITHUB_SECRET'], { organization: ENV['GITHUB_ORGANIZATION_NAME'], scope: "user,repo,gist" }
+  provider :github, ENV['GITHUB_KEY'], ENV['GITHUB_SECRET'], { scope: "user,repo,gist" }
 end
 ```
 

@@ -31,9 +31,7 @@ describe OmniAuth::Strategies::GitHubOrganization do
     allow(subject).to receive(:organizations).and_return(%w[example test])
   end
 
-  after do
-    OmniAuth.config.test_mode = false
-  end
+
 
   context 'client options' do
     it 'should have correct site' do
